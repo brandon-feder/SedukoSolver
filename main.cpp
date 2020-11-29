@@ -2,13 +2,14 @@
 #include <fstream>
 #include <array>
 #include <vector>
+#include <utility>
 
 using namespace std;
 
 // Array to contain the board
-array<array<int, 9>, 9> board;
+array<array<int, 9>, 9> boardStart;
 
-bool isValid(int X, int Y)
+bool isValid(array<array<int, 9>, 9> board, int X, int Y)
 {
     // The quadremts the place is in
     int quadX = X / 3;
@@ -58,6 +59,51 @@ bool isValid(int X, int Y)
     return true;
 }
 
+std::pair<array<array<int, 9>, 9>, bool>
+solve(array<array<int, 9>, 9> board, int x, int y)
+{
+
+    int nextX = x;
+    int nextY = y;
+
+    if(nextX == 8)
+    {
+        nextX = 0;
+        nextY += 1;
+    } else
+    {
+        nextX += 1;
+    }
+
+    if(x*y > 64)
+    {
+        return std::pair<array<array<int, 9>, 9>, bool>(board, true);
+    } else if(board[x][y] == 0)
+    {
+        for(int i = 1; i <= 9; ++i)
+        {
+            board[x][y] = i;
+            if( isValid(board, x, y) )
+            {
+                std::pair<array<array<int, 9>, 9>, bool> res = solve(board, nextX, nextY);
+                if(res.second == true)
+                {
+                    return res;
+                }
+            }
+
+        }
+
+        return std::pair<array<array<int, 9>, 9>, bool>(board, false);
+    } else
+    {
+        return solve(board, nextX, nextY);
+    }
+
+    std::cout << "Can't be solved" << std::endl;
+    std::exit(1);
+}
+
 int main()
 {
     // Get input seduko puzzle
@@ -71,53 +117,11 @@ int main()
             char nChr;
             in >> nChr;
             int n = (int)nChr-48;
-            board[y][x] = n;
+            boardStart[y][x] = n;
         }
     }
 
-    // Until solved, or unsolvable
-    while(true)
-    {
-        bool change = false; // Whether a change to the board was made this iteration
-
-        // For every place
-        for(int x = 0; x < 9; ++x)
-        {
-            for(int y = 0; y < 9; ++y)
-            {
-                // If the place is empty
-                if(board[x][y] == 0)
-                {
-                    int last;
-                    int n = 0;
-
-                    // Try every number
-                    for(int i = 1; i <= 9; ++i)
-                    {
-                        board[x][y] = i;
-                        if( isValid(x, y) )
-                        {
-                            last = i;
-                            ++n;
-                        }
-                    }
-
-                    // test if one piece was found
-                    if(n == 1)
-                    {
-                        board[x][y] = last;
-                        change = true;
-                    } else
-                    {
-                        board[x][y] = 0;
-                    }
-                }
-            }
-        }
-
-        if(change == false)
-            break;
-    }
+    array<array<int, 9>, 9> boardEnd = solve(boardStart, 0, 0).first;
 
     ofstream out;
     out.open("seduko.out");
@@ -126,7 +130,7 @@ int main()
     {
         for(int y = 0; y < 9; ++y)
         {
-            out << board[y][x] << " ";
+            out << boardEnd[y][x] << " ";
         }
         out << endl;
     }
